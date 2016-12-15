@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+    <head></head>
+    <body>
+        <h1>Recent Front Exports</h1>
+        <p>Go to Front and create a new one</p>
+        <table border=1 cellpadding=7>
+            <tr>
+                <th>ID</th>
+                <th>Status</th>
+                <th>Creation Date</th>
+            </tr>
+            {% for obj in results_objects %}
+            <tr>
+                <td><a href="{{ obj.id }}/">{{ obj.id }}</a></td>
+                <td>{{ obj.status }}</td>
+                <td>{{ obj.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>

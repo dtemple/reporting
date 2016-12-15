@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+    <head></head>
+    <body>
+    <table border=1 cellpadding=7>
+                {% for table in tables %}
+                <h2>{{titles[loop.index]}}</h2>
+                {{ table|safe }}
+                {% endfor %}
+        </table>
+    </body>
+</html>
