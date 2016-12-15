@@ -1,2 +1,6 @@
 Flask
+requests
+pandas
+json
+io
 gunicorn

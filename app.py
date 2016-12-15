@@ -1,11 +1,6 @@
-import csv
-import os
 import requests
 import pandas as pd
-import numpy as np
 import json
-import urllib.request
-import codecs
 import io
 
 from flask import Flask
