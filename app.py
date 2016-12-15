@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import json
 import io
+import datetime
 
 from flask import Flask
 from flask import render_template
@@ -79,7 +80,11 @@ def get_exports():
 def get_results(jsonData):
     x = json.loads(jsonData)
     resultsJson=x['_results']
+    for x in resultsJson:
+        x['created_at'] = datetime.datetime.fromtimestamp(int(x['created_at'])).strftime('%Y-%m-%d %H:%M:%S')
     return resultsJson
+
+
 
 #def get_query(jsonData):
 #    x = json.loads(jsonData)
