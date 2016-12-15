@@ -4,10 +4,11 @@
         <link rel=stylesheet type=text/css href="./static/style.css">
     </head>
     <body>
+    <h1>Here's the data</h1>
     <table border=1 cellpadding=7>
                 {% for table in tables %}
-                <h2>{{titles[loop.index]}}</h2>
-                {{ table|safe }}
+                {{titles[loop.index]}}
+                    {{ table|safe }}
                 {% endfor %}
         </table>
     </body>
