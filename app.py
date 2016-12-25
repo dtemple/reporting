@@ -108,9 +108,9 @@ def get_results(jsondict):
         x['id'] = resultslist[i]['id']
         x['url'] = resultslist[i]['url']
         x['status'] = resultslist[i]['status']
-        x['created_at'] = datetime.datetime.fromtimestamp(int(resultslist[i]['created_at'])).strftime('%Y-%m-%d %H:%M:%S')
-        x['query_start'] = datetime.datetime.fromtimestamp(int(resultslist[i]['query']['start'])).strftime('%Y-%m-%d')
-        x['query_end'] = datetime.datetime.fromtimestamp(int(resultslist[i]['query']['end'])).strftime('%Y-%m-%d')
+        x['created_at'] = datetime.datetime.fromtimestamp(int(resultslist[i]['created_at'])).strftime('%m/%d/%Y %H:%M:%S')
+        x['query_start'] = datetime.datetime.fromtimestamp(int(resultslist[i]['query']['start'])).strftime('%m/%d/%Y')
+        x['query_end'] = datetime.datetime.fromtimestamp(int(resultslist[i]['query']['end'])).strftime('%m/%d/%Y')
         masterdict[i]=x
         x={}
         i=i+1
