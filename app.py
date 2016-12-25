@@ -1,3 +1,16 @@
+
+### INTERNAL DASHBOARD ###
+#TODO Test and deploy
+#TODO Add a column to the pandas df to include email counts in total messages
+## Do that by parsing all the email tags for the name of the property and then adding to that inbox
+#TODO allow the user to adjust the number of messages required to count as active
+#TODO allow the user to select dates and create the front report on the fly
+#TODO bring in parse data to show invoices created, etc.
+
+### EXTERNAL REPORTING ###
+#TODO create a page for each hotel using their hotel name and then allow them to filter the data just in there
+
+
 import requests
 import pandas as pd
 import json
@@ -69,44 +82,53 @@ def get_csv(x):
     #csv_list = df
     return master
 
+
+# Function to get the exports from Front
 def get_exports():
     payload = {'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzY29wZXMiOlsiKiJdLCJpc3MiOiJmcm9udCIsInN1YiI6InNjb3V0In0.t6HbvRE_UCHJeBYLcVvXwasd5rH9EELCfDevw9fsvpw',
                'Accept': 'application/json'}
-    response = requests.get('https://api2.frontapp.com/exports?page=1', headers=payload)
-    jsonData = response.text
-    return jsonData
+    url='https://api2.frontapp.com/exports?page=1'
+    t = requests.get(url, headers=payload)
+    jsondict = t.json()
+    return jsondict
 
-# Front get exports list
-def get_results(jsonData):
-    x = json.loads(jsonData)
-    resultsJson=x['_results']
-    for x in resultsJson:
-        x['created_at'] = datetime.datetime.fromtimestamp(int(x['created_at'])).strftime('%Y-%m-%d %H:%M:%S')
-    return resultsJson
+# HERE IS HOW TO PRINT THE ITEMS IN ThE LIST
+#for num,obj in masterdict.items():
+#    print('status: %r, query_start: %r, created at: %r' % (obj['status'],obj['query_start'],obj['created_at']))
 
 
-
-#def get_query(jsonData):
-#    x = json.loads(jsonData)
-#    queryJson=x['_results']['query']
-#    return queryJson
-
-# TODO Transform the created at date
+# Take the front exports, get rid of the noise and put them in a readable dict of dicts
+# Another option here is to create a pd.dataframe from this data
+def get_results(jsondict):
+    resultslist=jsondict['_results']
+    i=0
+    masterdict={}
+    x={}
+    for i in range(0, len(resultslist)):
+        x['id'] = resultslist[i]['id']
+        x['url'] = resultslist[i]['url']
+        x['status'] = resultslist[i]['status']
+        x['created_at'] = datetime.datetime.fromtimestamp(int(resultslist[i]['created_at'])).strftime('%Y-%m-%d %H:%M:%S')
+        x['query_start'] = datetime.datetime.fromtimestamp(int(resultslist[i]['query']['start'])).strftime('%Y-%m-%d')
+        x['query_end'] = datetime.datetime.fromtimestamp(int(resultslist[i]['query']['end'])).strftime('%Y-%m-%d')
+        masterdict[i]=x
+        x={}
+        i=i+1
+    return masterdict
 
 @app.route("/")
 def index():
     template = 'index.html'
-    fullJson = get_exports()
-    results_objects = get_results(fullJson)
-    #query_objects = get_query(fullJson)
+    jsondict = get_exports()
+    results_objects = get_results(jsondict)
     return render_template(template, results_objects=results_objects)
 
 @app.route('/<row_id>/')
 def detail(row_id):
     template = 'detail.html'
-    fullJson = get_exports()
-    results_objects = get_results(fullJson)
-    for row in results_objects:
+    jsondict = get_exports()
+    results_objects = get_results(jsondict)
+    for num, row in results_objects.items():
         if row['id'] == row_id:
             object_list=get_csv(row['url'])
             return render_template(template, tables=[object_list.to_html(classes='bluestyle')], titles=['Data'])
@@ -115,3 +137,70 @@ def detail(row_id):
 if __name__ == '__main__':
     # Fire up the Flask test server
     app.run(debug=True, use_reloader=True)
+
+
+    # NOT USED
+    # def get_single_export(x):
+    #     payload = {'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzY29wZXMiOlsiKiJdLCJpc3MiOiJmcm9udCIsInN1YiI6InNjb3V0In0.t6HbvRE_UCHJeBYLcVvXwasd5rH9EELCfDevw9fsvpw',
+    #                'Accept': 'application/json'}
+    #     response = requests.get('https://api2.frontapp.com/exports/'+ x, headers=payload)
+    #     jsonData = response.text
+    #     return jsonData
+
+    # def get_query_dates(resultsJson):
+    #     for x in resultsJson:
+    #         print('ID is {}',x['id'])
+    #         for y in x['query']:
+    #             print(y['start'])
+    #
+    #         for key, value in resultsJson.items():
+    #             if 'query' in value:
+    #                 for start, dt in value['query'].items():
+    #                     print(start, dt)
+    # # for key, value in x.items():
+    #     if 'query' in value:
+    #         for start in value['query'].items():
+    #             start['start']='123'
+    #
+
+    # def add_dates(full_export, export_id):
+    #     payload = {'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzY29wZXMiOlsiKiJdLCJpc3MiOiJmcm9udCIsInN1YiI6InNjb3V0In0.t6HbvRE_UCHJeBYLcVvXwasd5rH9EELCfDevw9fsvpw',
+    #                'Accept': 'application/json'}
+    #     response = requests.get('https://api2.frontapp.com/exports/'+ export_id, headers=payload)
+    #     jsonData = response.text
+    #     x = json.loads(jsonData)
+    #     exportstats = x['query']
+    #     exportstats['start'] = datetime.datetime.fromtimestamp(int(exportstats['start'])).strftime('%Y-%m-%d %H:%M:%S')
+    #     exportstats['end'] = datetime.datetime.fromtimestamp(int(exportstats['end'])).strftime('%Y-%m-%d %H:%M:%S')
+    #     for export_id in full_export:
+    #         full_export[startdate]=exportstats['start']
+    #         full_export[enddate]=exportstats['end']
+    #     return resultsJson
+
+
+    # # results2 is saved as the json result of get exports from front
+# #This function gets the start and end time of the export
+# def get_start_end(results):
+#     y = 0
+#     for y in range(0, len(results)):
+#         print('the %r start is %r' % (y, datetime.datetime.fromtimestamp(int(results[y]['query']['start'])).strftime('%Y-%m-%d %H:%M:%S')))
+#         print('the %r end is %r' % (
+#         y, datetime.datetime.fromtimestamp(int(results[y]['query']['end'])).strftime('%Y-%m-%d %H:%M:%S')))
+#
+#
+#
+#     for x in resultsJson:
+#         x['created_at'] = datetime.datetime.fromtimestamp(int(x['created_at'])).strftime('%Y-%m-%d %H:%M:%S')
+#     for x in resultsJson:
+#         export_id=x['id']
+#         add_dates(resultsJson, export_id)
+#     return resultsJson
+
+#def get_query(jsonData):
+#    x = json.loads(jsonData)
+#    queryJson=x['_results']['query']
+#    return queryJson
+
+#create resultsdict instead of resultslist
+# def results_dict_create(jsondict):
+#     for links, result in jsondict.items():

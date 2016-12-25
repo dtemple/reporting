@@ -17,13 +17,17 @@
             <tr>
                 <th>ID</th>
                 <th>Status</th>
-                <th>Creation Date</th>
+                <th>Report Created</th>
+                <th>Report start date</th>
+                <th>Report end date</th>
             </tr>
-            {% for obj in results_objects %}
+            {% for num,obj in results_objects.items() %}
             <tr>
                 <td><a href="{{ obj.id }}/">{{ obj.id }}</a></td>
                 <td>{{ obj.status }}</td>
                 <td>{{ obj.created_at }}</td>
+                <td>{{ obj.query_start }}</td>
+                <td>{{ obj.query_end }}</td>
             </tr>
             {% endfor %}
         </table>
