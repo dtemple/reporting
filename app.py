@@ -75,9 +75,16 @@ def get_emails(data):
         inboundlist.append(values['Inbound'])
         outboundlist.append(values['Outbound'])
 
-    emaildata['inboundemails'] = inboundlist
-    emaildata['outboundemails'] = outboundlist
-    emaildata['totalemails'] = emaildata['inboundemails'] + emaildata['outboundemails']
+    emaildata['inbound_emails'] = inboundlist
+    emaildata['outbound_emails'] = outboundlist
+    emaildata['total_emails'] = emaildata['inbound_emails'] + emaildata['outbound_emails']
+
+    # Drop the tag column
+    emaildata=emaildata.drop('hotel-tag',1)
+
+    # Sort the table
+    emaildata.sort_values('total_emails', ascending=False, inplace=True)
+
     # Return a dataframe with the columns: index, hotels, hotel-tags, inboundemails, outboundemails, totalemails
     return emaildata
 
@@ -89,7 +96,11 @@ def prod_csv(x):
             'author', 'contact_name', 'contact_handle', 'to', 'cc', 'bcc', 'extract', 'tags']
     # Upload the file
     df = pd.read_csv(io.StringIO(s.decode('utf-8')), names=cols)
-    return df
+    # remove junk inboxes
+    data = df.loc[~df['inbox'].isin(
+        ['SD App', 'Vendors', 'Arrivals', '02 - Reservations', 'Support (Front desks)', '01 - Payments', 'Arrivals-dev',
+         'SMS: Demo Hotel'])]
+    return data
 
 def testing_csv(x):
     cols = ['message_id', 'conversation_id', 'segment', 'direction', 'status', 'inbox', 'msg_date', 'reaction_time',
@@ -99,19 +110,13 @@ def testing_csv(x):
     s = "/Users/dtemple/PycharmProjects/testing/front.csv"
 
     df = pd.read_csv(s, names=cols)
-    return df
-
-def get_csv(x):
-    # prod get front csv
-    df=prod_csv(x)
-
-    # for testing
-    #df=testing_csv(x)
-
     # remove junk inboxes
     data = df.loc[~df['inbox'].isin(
         ['SD App', 'Vendors', 'Arrivals', '02 - Reservations', 'Support (Front desks)', '01 - Payments', 'Arrivals-dev',
          'SMS: Demo Hotel'])]
+    return data
+
+def get_inbox_table(data):
 
     # Create a table with count of unique users + count of unique messages
     master = data.pivot_table(values=['contact_handle', 'message_id'], index=['inbox'],
@@ -214,8 +219,13 @@ def detail(row_id):
     results_objects = get_results(jsondict)
     for num, row in results_objects.items():
         if row['id'] == row_id:
-            object_list=get_csv(row['url'])
-            return render_template(template, tables=[object_list.to_html(classes='bluestyle')], titles=['Data'])
+            # for testing
+            # data=testing_csv(row['url'])
+            # prod get front csv
+            data = prod_csv(row['url'])
+            object_list=get_inbox_table(data)
+            emaildata=get_emails(data)
+            return render_template(template, tables=[object_list.to_html(classes='bluestyle')], emails=[emaildata.to_html(classes='bluestyle')], titles=['Inbox Data'])
     abort(404)
 
 if __name__ == '__main__':
