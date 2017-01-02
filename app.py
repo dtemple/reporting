@@ -1,7 +1,6 @@
 
 ### INTERNAL DASHBOARD ###
-#TODO Test and deploy
-#TODO Add a column to the pandas df to include email counts in total messages
+#TODO Add columns for total emails and inbound emails, change the total messages and inbound messages to total sms and inbound sms
 ## Do that by parsing all the email tags for the name of the property and then adding to that inbox
 #TODO allow the user to adjust the number of messages required to count as active
 #TODO allow the user to select dates and create the front report on the fly
@@ -13,6 +12,7 @@
 
 import requests
 import pandas as pd
+import numpy as np
 import json
 import io
 import datetime
@@ -22,7 +22,66 @@ from flask import render_template
 from flask import abort
 app = Flask(__name__)
 
-def get_csv(x):
+## Create a dict to match the tag to a hotel
+# TODO Create this dynamically using the tags in the report
+hoteltagsmap = {
+    'Marcel': 'marcel-email',
+    'Kabuki': 'kabuki-email',
+    'Zeppelin': 'zeppelin-email',
+    'Walker': 'walker-email',
+    'Ameritania': 'ameritania-email',
+    'Zetta': 'zetta-email',
+    'GalleriaPark': 'galleriapark-email',
+    'Zelos': 'zelos-email',
+    'Triton': 'triton-email',
+    'Gregory': 'gregory-email',
+    'Presidio': 'presidio-email'
+}
+
+hotelinboxmap = {
+    'NYC SMS: Marcel':'Marcel',
+    'SF SMS: Kabuki':'Kabuki',
+    'SF SMS: Zeppelin':'Zeppelin',
+    'NYC SMS: Walker Hotel':'Walker',
+    'NYC SMS: Ameritania':'Ameritania',
+    'SF SMS: Zetta':'Zetta',
+    'SF SMS: Galleria Park Hotel':'GalleriaPark',
+    'SF SMS: Hotel Zelos':'Zelos',
+    'SF SMS: Triton':'Triton',
+    'NYC SMS: Gregory':'Gregory',
+    'SF SMS: Inn at the Presidio':'Presidio'
+}
+
+def get_emails(data):
+    # Remove the NaN values
+    dfNoNa = data.dropna(subset=['tags'])
+    # Just keep the email records
+    dfemails = dfNoNa[dfNoNa['tags'].str.lower().str.contains("-email")]
+
+    # Figure out which hotel each record is
+
+    # Use the dict to create a dataframe
+    emaildata = pd.DataFrame(list(hoteltagsmap.items()),
+                             columns=['hotel-name', 'hotel-tag'])
+
+    inboundlist = []
+    outboundlist = []
+
+    for hotel, tag in hoteltagsmap.items():
+        # create a df with just the data for that hotel
+        dftags = dfemails[dfemails['tags'].map(lambda tags: tag in tags.lower())]
+        # assign the right data to a master df
+        values = pd.value_counts(dftags['direction'].values, sort=False)
+        inboundlist.append(values['Inbound'])
+        outboundlist.append(values['Outbound'])
+
+    emaildata['inboundemails'] = inboundlist
+    emaildata['outboundemails'] = outboundlist
+    emaildata['totalemails'] = emaildata['inboundemails'] + emaildata['outboundemails']
+    # Return a dataframe with the columns: index, hotels, hotel-tags, inboundemails, outboundemails, totalemails
+    return emaildata
+
+def prod_csv(x):
     url = x
     s = requests.get(url).content
     cols = ['message_id', 'conversation_id', 'segment', 'direction', 'status', 'inbox', 'msg_date', 'reaction_time',
@@ -30,7 +89,26 @@ def get_csv(x):
             'author', 'contact_name', 'contact_handle', 'to', 'cc', 'bcc', 'extract', 'tags']
     # Upload the file
     df = pd.read_csv(io.StringIO(s.decode('utf-8')), names=cols)
-    # REMOVE JUNK INBOXES
+    return df
+
+def testing_csv(x):
+    cols = ['message_id', 'conversation_id', 'segment', 'direction', 'status', 'inbox', 'msg_date', 'reaction_time',
+            'resolution_time', 'resp_time', 'assignee',
+            'author', 'contact_name', 'contact_handle', 'to', 'cc', 'bcc', 'extract', 'tags']
+
+    s = "/Users/dtemple/PycharmProjects/testing/front.csv"
+
+    df = pd.read_csv(s, names=cols)
+    return df
+
+def get_csv(x):
+    # prod get front csv
+    df=prod_csv(x)
+
+    # for testing
+    #df=testing_csv(x)
+
+    # remove junk inboxes
     data = df.loc[~df['inbox'].isin(
         ['SD App', 'Vendors', 'Arrivals', '02 - Reservations', 'Support (Front desks)', '01 - Payments', 'Arrivals-dev',
          'SMS: Demo Hotel'])]
@@ -74,8 +152,14 @@ def get_csv(x):
     # guest.drop('index', axis=1, inplace=True)
 
     # Merge
+    # TODO clean up everything above
     master = pd.merge(master, guest, left_index=True, right_index=True)
-    master.sort_values('total_guests', ascending=False, inplace=True)
+    master.sort_values('active_guests', ascending=False, inplace=True)
+
+    # Add a column with the hotel names
+    #for x in master['inbox']:
+        #hotel
+
 
     #csv_file = open(csv_path, 'r')
     #csv_obj = csv.DictReader(csv_file)
@@ -137,70 +221,3 @@ def detail(row_id):
 if __name__ == '__main__':
     # Fire up the Flask test server
     app.run(debug=True, use_reloader=True)
-
-
-    # NOT USED
-    # def get_single_export(x):
-    #     payload = {'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzY29wZXMiOlsiKiJdLCJpc3MiOiJmcm9udCIsInN1YiI6InNjb3V0In0.t6HbvRE_UCHJeBYLcVvXwasd5rH9EELCfDevw9fsvpw',
-    #                'Accept': 'application/json'}
-    #     response = requests.get('https://api2.frontapp.com/exports/'+ x, headers=payload)
-    #     jsonData = response.text
-    #     return jsonData
-
-    # def get_query_dates(resultsJson):
-    #     for x in resultsJson:
-    #         print('ID is {}',x['id'])
-    #         for y in x['query']:
-    #             print(y['start'])
-    #
-    #         for key, value in resultsJson.items():
-    #             if 'query' in value:
-    #                 for start, dt in value['query'].items():
-    #                     print(start, dt)
-    # # for key, value in x.items():
-    #     if 'query' in value:
-    #         for start in value['query'].items():
-    #             start['start']='123'
-    #
-
-    # def add_dates(full_export, export_id):
-    #     payload = {'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzY29wZXMiOlsiKiJdLCJpc3MiOiJmcm9udCIsInN1YiI6InNjb3V0In0.t6HbvRE_UCHJeBYLcVvXwasd5rH9EELCfDevw9fsvpw',
-    #                'Accept': 'application/json'}
-    #     response = requests.get('https://api2.frontapp.com/exports/'+ export_id, headers=payload)
-    #     jsonData = response.text
-    #     x = json.loads(jsonData)
-    #     exportstats = x['query']
-    #     exportstats['start'] = datetime.datetime.fromtimestamp(int(exportstats['start'])).strftime('%Y-%m-%d %H:%M:%S')
-    #     exportstats['end'] = datetime.datetime.fromtimestamp(int(exportstats['end'])).strftime('%Y-%m-%d %H:%M:%S')
-    #     for export_id in full_export:
-    #         full_export[startdate]=exportstats['start']
-    #         full_export[enddate]=exportstats['end']
-    #     return resultsJson
-
-
-    # # results2 is saved as the json result of get exports from front
-# #This function gets the start and end time of the export
-# def get_start_end(results):
-#     y = 0
-#     for y in range(0, len(results)):
-#         print('the %r start is %r' % (y, datetime.datetime.fromtimestamp(int(results[y]['query']['start'])).strftime('%Y-%m-%d %H:%M:%S')))
-#         print('the %r end is %r' % (
-#         y, datetime.datetime.fromtimestamp(int(results[y]['query']['end'])).strftime('%Y-%m-%d %H:%M:%S')))
-#
-#
-#
-#     for x in resultsJson:
-#         x['created_at'] = datetime.datetime.fromtimestamp(int(x['created_at'])).strftime('%Y-%m-%d %H:%M:%S')
-#     for x in resultsJson:
-#         export_id=x['id']
-#         add_dates(resultsJson, export_id)
-#     return resultsJson
-
-#def get_query(jsonData):
-#    x = json.loads(jsonData)
-#    queryJson=x['_results']['query']
-#    return queryJson
-
-#create resultsdict instead of resultslist
-# def results_dict_create(jsondict):
-#     for links, result in jsondict.items():
