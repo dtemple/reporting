@@ -1,7 +1,5 @@
 
 ### INTERNAL DASHBOARD ###
-#TODO Add columns for total emails and inbound emails, change the total messages and inbound messages to total sms and inbound sms
-## Do that by parsing all the email tags for the name of the property and then adding to that inbox
 #TODO allow the user to adjust the number of messages required to count as active
 #TODO allow the user to select dates and create the front report on the fly
 #TODO bring in parse data to show invoices created, etc.
@@ -85,6 +83,10 @@ def get_emails(data):
     # Sort the table
     emaildata.sort_values('total_emails', ascending=False, inplace=True)
 
+    # Set the hotel name as the index
+    #emaildata.set_index(['hotel-name'])
+
+
     # Return a dataframe with the columns: index, hotels, hotel-tags, inboundemails, outboundemails, totalemails
     return emaildata
 
@@ -95,21 +97,26 @@ def prod_csv(x):
             'resolution_time', 'resp_time', 'assignee',
             'author', 'contact_name', 'contact_handle', 'to', 'cc', 'bcc', 'extract', 'tags']
     # Upload the file
-    df = pd.read_csv(io.StringIO(s.decode('utf-8')), names=cols)
+    df = pd.read_csv(io.StringIO(s.decode('utf-8')), names=cols, dtype={"message_id":np.int32, 'conversation_id':np.int32, 'segment':str, 'direction':str, 'status':str, 'inbox':str, 'msg_date':str, 'reaction_time':str,
+        'resolution_time':str, 'resp_time':str, 'assignee':str,
+        'author':str, 'contact_name':str, 'contact_handle':str, 'to':str, 'cc':str, 'bcc':str, 'extract':str, 'tags':str}, skiprows=1)
     # remove junk inboxes
     data = df.loc[~df['inbox'].isin(
         ['SD App', 'Vendors', 'Arrivals', '02 - Reservations', 'Support (Front desks)', '01 - Payments', 'Arrivals-dev',
          'SMS: Demo Hotel'])]
     return data
 
-def testing_csv(x):
+def testing_csv():
     cols = ['message_id', 'conversation_id', 'segment', 'direction', 'status', 'inbox', 'msg_date', 'reaction_time',
             'resolution_time', 'resp_time', 'assignee',
             'author', 'contact_name', 'contact_handle', 'to', 'cc', 'bcc', 'extract', 'tags']
 
     s = "/Users/dtemple/PycharmProjects/testing/front.csv"
 
-    df = pd.read_csv(s, names=cols)
+    df = pd.read_csv(s, names=cols, dtype={"message_id":np.int32, 'conversation_id':np.int32, 'segment':str, 'direction':str, 'status':str, 'inbox':str, 'msg_date':str, 'reaction_time':str,
+        'resolution_time':str, 'resp_time':str, 'assignee':str,
+        'author':str, 'contact_name':str, 'contact_handle':str, 'to':str, 'cc':str, 'bcc':str, 'extract':str, 'tags':str}, skiprows=1)
+    
     # remove junk inboxes
     data = df.loc[~df['inbox'].isin(
         ['SD App', 'Vendors', 'Arrivals', '02 - Reservations', 'Support (Front desks)', '01 - Payments', 'Arrivals-dev',
@@ -220,7 +227,7 @@ def detail(row_id):
     for num, row in results_objects.items():
         if row['id'] == row_id:
             # for testing
-            # data=testing_csv(row['url'])
+            # data=testing_csv()
             # prod get front csv
             data = prod_csv(row['url'])
             object_list=get_inbox_table(data)
