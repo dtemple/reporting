@@ -83,10 +83,6 @@ def get_emails(data):
     # Sort the table
     emaildata.sort_values('total_emails', ascending=False, inplace=True)
 
-    # Set the hotel name as the index
-    #emaildata.set_index(['hotel-name'])
-
-
     # Return a dataframe with the columns: index, hotels, hotel-tags, inboundemails, outboundemails, totalemails
     return emaildata
 
@@ -116,11 +112,16 @@ def testing_csv():
     df = pd.read_csv(s, names=cols, dtype={"message_id":np.int32, 'conversation_id':np.int32, 'segment':str, 'direction':str, 'status':str, 'inbox':str, 'msg_date':str, 'reaction_time':str,
         'resolution_time':str, 'resp_time':str, 'assignee':str,
         'author':str, 'contact_name':str, 'contact_handle':str, 'to':str, 'cc':str, 'bcc':str, 'extract':str, 'tags':str}, skiprows=1)
-    
+
     # remove junk inboxes
     data = df.loc[~df['inbox'].isin(
         ['SD App', 'Vendors', 'Arrivals', '02 - Reservations', 'Support (Front desks)', '01 - Payments', 'Arrivals-dev',
          'SMS: Demo Hotel'])]
+
+    # remove useless columns
+    data.drop(['segment', 'reaction_time', 'resolution_time', 'resp_time', 'assignee', 'cc', 'bcc', 'extract'], 1,
+              inplace=True)
+
     return data
 
 def get_inbox_table(data):
