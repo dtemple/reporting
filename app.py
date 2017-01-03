@@ -1,5 +1,6 @@
 
 ### INTERNAL DASHBOARD ###
+#TODO Add a count of the unique emailers to the email table
 #TODO allow the user to adjust the number of messages required to count as active
 #TODO allow the user to select dates and create the front report on the fly
 #TODO bring in parse data to show invoices created, etc.
@@ -17,8 +18,16 @@ import datetime
 
 from flask import Flask
 from flask import render_template
+from flask_basicauth import BasicAuth
 from flask import abort
 app = Flask(__name__)
+
+app.config['BASIC_AUTH_USERNAME'] = 'scout'
+app.config['BASIC_AUTH_PASSWORD'] = 'Travelinstyle!'
+
+app.config['BASIC_AUTH_FORCE'] = True
+
+basic_auth = BasicAuth(app)
 
 ## Create a dict to match the tag to a hotel
 # TODO Create this dynamically using the tags in the report
@@ -214,6 +223,7 @@ def get_results(jsondict):
     return masterdict
 
 @app.route("/")
+@basic_auth.required
 def index():
     template = 'index.html'
     jsondict = get_exports()
