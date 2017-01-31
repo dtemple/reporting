@@ -42,8 +42,12 @@ hoteltagsmap = {
     'Zelos': 'zelos-email',
     'Triton': 'triton-email',
     'Gregory': 'gregory-email',
-    'Presidio': 'presidio-email'
+    'Presidio': 'presidio-email',
+    'HarborCourt': 'harborcourt-email',
+    'Pickwick': 'pickwick-email',
 }
+
+tagtohotel={v: k for k, v in hoteltagsmap.items()}
 
 hotelinboxmap = {
     'NYC SMS: Marcel':'Marcel',
@@ -57,6 +61,20 @@ hotelinboxmap = {
     'SF SMS: Triton':'Triton',
     'NYC SMS: Gregory':'Gregory',
     'SF SMS: Inn at the Presidio':'Presidio'
+}
+
+tagtoinbox = {
+    'marcel-email':'NYC SMS: Marcel',
+    'kabuki-email':'SF SMS: Kabuki',
+    'zeppelin-email':'SF SMS: Zeppelin',
+    'walker-email':'NYC SMS: Walker Hotel',
+    'ameritania-email':'NYC SMS: Ameritania',
+    'zetta-email':'SF SMS: Zetta',
+    'galleriapark-email':'SF SMS: Galleria Park Hotel',
+    'zelos-email':'SF SMS: Hotel Zelos',
+    'triton-email':'SF SMS: Triton',
+    'gregory-email':'NYC SMS: Gregory',
+    'presidio-email':'SF SMS: Inn at the Presidio'
 }
 
 def get_emails(data):
@@ -88,6 +106,40 @@ def get_emails(data):
 
     # Drop the tag column
     emaildata=emaildata.drop('hotel-tag',1)
+
+    activeguestemails = pd.DataFrame(list(hoteltagsmap.items()),
+                             columns=['hotel-name', 'hotel-tag'])
+    # Now add the active guests as equals anybody >= 2 emails with email tag
+    for hotel, tag in hoteltagsmap.items():
+        # create a df with just the data for that hotel
+        dftags = pd.DataFrame(dfemails[dfemails['tags'].map(lambda tags: tag in tags.lower())])
+
+        guestsByMessageCount = dftags.pivot_table(values=['message_id'], index=['inbox', 'contact_handle'],
+                                            aggfunc=lambda x: len(x.unique()))
+        active_only = guestsByMessageCount.loc[guestsByMessageCount['message_id'] > 1]
+        active_only.reset_index(inplace=True)  # resets the index to make all data into columns
+        active_count = active_only.pivot_table(values=['contact_handle'], index=['inbox'],
+                                               aggfunc=lambda x: len(x.unique()))
+        active_count.columns = ['active_guests']
+
+
+    # ## Now add the active guests
+    # ## Logic: if it has the GRF tag, count it if there's > 2. No GRF tag, count all threads
+    #
+    # # Get DF with just GRF convos and then count all the unique contact_handles
+    # dfgrf = dfemails[dfemails['tags'].map(lambda tags: 'grf' in tags.lower())]
+    # cols=['inbox','contact_handle','tags']
+    # dfgrfsmall=dfgrf[cols]
+    # activeguests=[]
+    # hotelname=[]
+    # for tag, hotel in tagtohotel.items():
+    #     # create a df with just the data for that hotel
+    #     grftags = pd.DataFrame(dfgrfsmall[dfgrfsmall['tags'].map(lambda tags: tag in tags.lower())])
+    #     grftags['hotel']=hotel
+    #     values = pd.value_counts(grftags['hotel'].values, sort=False)
+    #     activeguests.append(values['hotel'])
+    #
+    # emaildata['active_guests']=activeguests
 
     # Sort the table
     emaildata.sort_values('total_emails', ascending=False, inplace=True)
