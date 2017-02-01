@@ -110,12 +110,12 @@ def prod_csv(x):
             'resolution_time', 'resp_time', 'assignee',
             'author', 'contact_name', 'contact_handle', 'to', 'cc', 'bcc', 'extract', 'tags']
     # Upload the file
-    df = pd.read_csv(io.StringIO(s.decode('utf-8')), names=cols, dtype={"message_id":np.int32, 'conversation_id':np.int32, 'segment':str, 'direction':str, 'status':str, 'inbox':str, 'msg_date':str, 'reaction_time':str,
-        'resolution_time':str, 'resp_time':str, 'assignee':str,
-        'author':str, 'contact_name':str, 'contact_handle':str, 'to':str, 'cc':str, 'bcc':str, 'extract':str, 'tags':str}, skiprows=1)
+    df = pd.read_csv(io.StringIO(s.decode('utf-8')), names=cols, usecols=['message_id', 'conversation_id', 'direction', 'status', 'inbox', 'msg_date',
+            'author', 'contact_name', 'contact_handle', 'to', 'tags'], dtype={"message_id":np.int32, 'conversation_id':np.int32, 'direction':str, 'status':str, 'inbox':str, 'msg_date':str,
+        'author':str, 'contact_name':str, 'contact_handle':str, 'to':str, 'tags':str}, skiprows=1)
     # remove junk inboxes
     data = df.loc[~df['inbox'].isin(
-        ['SD App', 'Vendors', 'Arrivals', '02 - Reservations', 'Support (Front desks)', '01 - Payments', 'Arrivals-dev',
+        ['SD App', '03 - Vendors', 'Arrivals', '02 - Reservations', '04 - Support (Hotels/Front Desks)', '01 - Payments', 'Arrivals-dev',
          'SMS: Demo Hotel'])]
     return data
 
