@@ -42,7 +42,11 @@ hoteltagsmap = {
     'Zelos': 'zelos-email',
     'Triton': 'triton-email',
     'Gregory': 'gregory-email',
-    'Presidio': 'presidio-email'
+    'Presidio': 'presidio-email',
+    'AmsterdamCourt': 'amsterdamcourt-email',
+    'Bentley': 'bentley-email',
+    'Pickwick': 'pickwick-email',
+    'Marker': 'marker-email'
 }
 
 hotelinboxmap = {
@@ -56,7 +60,11 @@ hotelinboxmap = {
     'SF SMS: Hotel Zelos':'Zelos',
     'SF SMS: Triton':'Triton',
     'NYC SMS: Gregory':'Gregory',
-    'SF SMS: Inn at the Presidio':'Presidio'
+    'SF SMS: Inn at the Presidio':'Presidio',
+    'NYC SMS: Amsterdam Court' : 'AmsterdamCourt',
+    'NYC SMS: Bentley' : 'Bentley',
+    'SF SMS: Pickwick' : 'Pickwick',
+    'SF SMS: The Marker' : 'Marker'
 }
 
 def get_emails(data):
@@ -242,8 +250,9 @@ def detail(row_id):
             # prod get front csv
             data = prod_csv(row['url'])
             object_list=get_inbox_table(data)
-            emaildata=get_emails(data)
-            return render_template(template, tables=[object_list.to_html(classes='bluestyle')], emails=[emaildata.to_html(classes='bluestyle')], titles=['Inbox Data'])
+            #emaildata=get_emails(data)
+            #return render_template(template, tables=[object_list.to_html(classes='bluestyle')], emails=[emaildata.to_html(classes='bluestyle')], titles=['Inbox Data'])
+            return render_template(template, tables=[object_list.to_html(classes='bluestyle')], titles=['Inbox Data'])
     abort(404)
 
 if __name__ == '__main__':
